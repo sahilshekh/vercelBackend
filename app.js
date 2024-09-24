@@ -17,6 +17,14 @@ const app = express();
 
 // Middleware for JSON and CORS
 app.use(express.json());
+const corsOptions = {
+  origin: 'http://localhost:3000', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  allowedHeaders: ['Content-Type', 'Authorization'], 
+  credentials: true, 
+};
+
+app.use(cors(corsOptions));
 app.use(cors());
 
 // Connect to MongoDB
