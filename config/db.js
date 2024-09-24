@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 // Instead of hardcoding the connection string
-const mongooseUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/clientManagement";
+const mongooseUri = process.env.MONGO_URI || "mongodb+srv://sahilshekh885799:deMo3kjtqZcDthXM@cluster0.xhxdl.mongodb.net/clientManagement";
 
 // Then connect using:
 
