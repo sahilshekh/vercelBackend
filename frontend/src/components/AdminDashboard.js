@@ -2,6 +2,8 @@ import React from 'react';
 import ClientTable from './ClientTable';
 import ClientForm from './ClientForm';
 import './AdminDashboard.css'; // Ensure you have this for styling
+import UserForm from './UserForm';
+import UserTable from './UserTable';
 
 const AdminDashboard = () => {
   return (
@@ -15,6 +17,15 @@ const AdminDashboard = () => {
         <div className="table-card">
           <h2>Client List</h2>
           <ClientTable />
+        </div>
+
+        <div className="form-card">
+          <h2>Add New User</h2>
+          <UserForm />
+        </div>
+        <div className="table-card">
+          <h2>User List</h2>
+          <UserTable />
         </div>
       </div>
     </div>
