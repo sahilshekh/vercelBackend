@@ -1,77 +1,80 @@
-// controllers/reportController.js
 const Operation = require('../models/Opration');
+const moment = require('moment'); // Install moment.js for date manipulation
 
-// Helper function to calculate success/error metrics
-const calculateMetrics = async (startDate, endDate) => {
-  const totalOperations = await Operation.countDocuments({
-    createdAt: { $gte: startDate, $lt: endDate },
-  });
-  
-  const successOperations = await Operation.countDocuments({
-    status: 'success',
-    createdAt: { $gte: startDate, $lt: endDate },
-  });
-
-  const errorOperations = await Operation.countDocuments({
-    status: 'error',
-    createdAt: { $gte: startDate, $lt: endDate },
-  });
-
-  const errorCategories = await Operation.aggregate([
-    { $match: { status: 'error', createdAt: { $gte: startDate, $lt: endDate } } },
-    { $group: { _id: '$errorMessage', count: { $sum: 1 } } },
-  ]);
-
-  return {
-    totalOperations,
-    successOperations,
-    errorOperations,
-    successRate: (successOperations / totalOperations) * 100,
-    errorRate: (errorOperations / totalOperations) * 100,
-    errorCategories,
-  };
-};
-
-// Controller to handle report generation
 const generateMISReport = async (req, res) => {
   try {
-    const timeFrame = req.query.timeFrame || 'daily'; // 'daily', 'weekly', 'monthly'
-    
-    let startDate;
-    const endDate = new Date(); // Now
+    // Fetch all operation data from the database
+    const operations = await Operation.find();
 
-    // Set start date based on time frame
-    switch (timeFrame) {
-      case 'weekly':
-        startDate = new Date();
-        startDate.setDate(endDate.getDate() - 7);
-        break;
-      case 'monthly':
-        startDate = new Date();
-        startDate.setMonth(endDate.getMonth() - 1);
-        break;
-      case 'daily':
-      default:
-        startDate = new Date();
-        startDate.setDate(endDate.getDate() - 1);
-    }
+    // Initialize metric objects
+    const dailyMetrics = {};
+    const weeklyMetrics = {};
+    const monthlyMetrics = {};
 
-    // Calculate metrics
-    const metrics = await calculateMetrics(startDate, endDate);
+    // Loop through each operation and categorize them into daily, weekly, and monthly metrics
+    operations.forEach((operation) => {
+      const createdAt = moment(operation.createdAt);
+      
+      // Daily metrics
+      const day = createdAt.format('YYYY-MM-DD');
+      if (!dailyMetrics[day]) {
+        dailyMetrics[day] = { successCount: 0, errorCount: 0 };
+      }
+      if (operation.status === 'success') {
+        dailyMetrics[day].successCount += 1;
+      } else {
+        dailyMetrics[day].errorCount += 1;
+      }
 
-    res.status(200).json({
-      success: true,
-      data: metrics,
+      // Weekly metrics
+      const week = createdAt.format('YYYY-WW'); // Week of the year
+      if (!weeklyMetrics[week]) {
+        weeklyMetrics[week] = { successCount: 0, errorCount: 0 };
+      }
+      if (operation.status === 'success') {
+        weeklyMetrics[week].successCount += 1;
+      } else {
+        weeklyMetrics[week].errorCount += 1;
+      }
+
+      // Monthly metrics
+      const month = createdAt.format('YYYY-MM');
+      if (!monthlyMetrics[month]) {
+        monthlyMetrics[month] = { successCount: 0, errorCount: 0 };
+      }
+      if (operation.status === 'success') {
+        monthlyMetrics[month].successCount += 1;
+      } else {
+        monthlyMetrics[month].errorCount += 1;
+      }
+    });
+
+    // Convert metrics objects into arrays
+    const dailyMetricsArray = Object.keys(dailyMetrics).map((date) => ({
+      date,
+      ...dailyMetrics[date],
+    }));
+
+    const weeklyMetricsArray = Object.keys(weeklyMetrics).map((week) => ({
+      week,
+      ...weeklyMetrics[week],
+    }));
+
+    const monthlyMetricsArray = Object.keys(monthlyMetrics).map((month) => ({
+      month,
+      ...monthlyMetrics[month],
+    }));
+
+    // Respond with the metrics
+    res.json({
+      daily: dailyMetricsArray,
+      weekly: weeklyMetricsArray,
+      monthly: monthlyMetricsArray,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error generating report',
-      error: error.message,
-    });
+    console.error('Error fetching report metrics:', error);
+    res.status(500).json({ error: 'Error fetching report metrics' });
   }
 };
 
-module.exports = {
-  generateMISReport,
-};
+module.exports = { generateMISReport };

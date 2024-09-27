@@ -32,7 +32,7 @@ connectDB();
 
 // Public Auth Routes
 app.use('/api', authRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/report', reportRoutes);
 // Client Routes (protected by JWT)
 app.use('/api/clients', jwtAuthenticationMiddleware, clientRoutes);
 
